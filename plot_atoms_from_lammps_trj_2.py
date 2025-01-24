@@ -1,6 +1,127 @@
 
 import matplotlib.pyplot as plt
+import math
 import numpy as np
+
+
+def plot_energy_vs_distance():
+    reference_atoms = ["1", "2"] #this are atom types for now
+    time_steps = []
+    distance_data = []    
+    trajectory_file = "AIREBO_C2H6_variable_pull_test.lammpstrj"
+    path = "C:\\LAMMPS\\topo\\C2H6\\AIREBO RUN\\"
+    path_and_file = path + trajectory_file
+    log_file = path  + "log.lammps"
+    count1 = 0
+    count2 = 0
+    atom1= np.zeros(3)
+    atom2= np.zeros(3)   
+    
+    with open(path_and_file) as f:
+        igot = f.readlines()         
+        
+        for line in igot:
+                atom_data = line.split() 
+                if len(atom_data) >2 :
+                    
+                        
+                    #print(line)
+                    countzero_in1 = np.count_nonzero(atom1)
+                    countzero_in2 = np.count_nonzero(atom2)
+
+                    
+                    if atom_data[1] == "1":
+                        #print("found reference atom", line)  
+                        #print(atom_data[1])
+                        atom1_x, atom1_y, atom1_z = float(atom_data[2]), float(atom_data[3]) , float(atom_data[4])
+                        atom1 = np.array([atom1_x, atom1_y, atom1_z])
+                        count1 =count1 +1 
+                        #print(atom1_x, atom1_y, atom1_z)
+                    
+                    if atom_data[1] == "2":
+                        #print("found reference atom", line)  
+                        #print(atom_data[1])
+                        atom2_x, atom2_y, atom2_z = float(atom_data[2]), float(atom_data[3]) ,float(atom_data[4])
+                        atom2 = np.array([atom2_x, atom2_y, atom2_z])
+                        count2 =count2 +1
+                        #print(atom2_x, atom2_y, atom2_z)
+                    
+                   
+                    if countzero_in1 != 0 and countzero_in2 != 0 :
+                        #print(atom1, atom2)
+                        #distance = np.linalg.norm(atom2 - atom1) ##############################################try the manual method first to double check                    
+                        distance = math.sqrt((atom2_x - atom1_x)**2 +  (atom2_y -atom1_y)**2 +  (atom2_z- atom1_z)**2)
+                        
+                        if distance < 2:
+                            #print("this is distance", distance)
+                            distance_data.append(distance)
+                            
+                        #testing is all the steps are measured only once:
+                        #distance_data.append(distance)
+                        atom1.fill(0)
+                        atom2.fill(0)
+                        #print(atom1, atom2)
+                                                  
+
+        try:                        
+            
+    
+            print("steps to break", len(distance_data), ": bond distance at breaking step", distance_data[-1], "Angstroms")
+            print(count1, count2)  
+        except:
+            pass
+    
+    #extract the forces at each step from the log file
+    forces = []    
+    with open(log_file) as f:
+        igot = f.readlines()
+        for count, line in enumerate(igot):
+            if line.find("999") > -1 and "dataflag" not in line:  #this needs to skip over the dataflag line in the input sections
+                force_line= line.split()
+                forces.append(force_line[1])
+                #print(line)        
+        print("force data points", len(forces))
+    
+    #calculate the energy by multiplying the force * the distance up to the breaking step
+    energies = []
+    eq_length = 1.54
+    for point in range(len(distance_data)):
+        
+        if point == 0:
+            delta_d = round(float(distance_data[point]) -  eq_length , 4 )
+            
+        else:
+            delta_d = round(float(distance_data[point]), 4) - round(float(distance_data[point-1]), 4)
+        
+        energy = delta_d  * float(forces[point])
+        #print(delta_d, forces[point], energy)
+        energies.append(energy)
+    
+    #sum up all the enerygy to supplement the graph
+    total_e =  0
+    for delta_e in range(len(energies)):
+        total_e = round(float(energies[delta_e]) + total_e, 2)
+    
+    BDE = "Bond dissociation energy: " +  str(total_e) + " eV"    
+    print("Bond dissociation energy: ", total_e)
+    bond_length = "Bond length at breaking step: " + str( round(float(distance_data[-1]),2)) +  " Angstroms"
+    
+    last_data_point = len(distance_data)
+                   
+    plt.figure()                
+    plt.plot([float(i) for i in distance_data[0:last_data_point]], [float(j) for j in energies[0:last_data_point]], color='r', label="energy")
+    plt.text(1.57, 0.1, BDE, fontsize=10, color='black', zorder=20)
+    plt.text(1.57, 0.08, bond_length, fontsize=10, color='black', zorder=20)
+    plt.legend(loc='upper left')
+    plt.xlabel("distance A")
+    plt.ylabel("energy eV")
+    
+    plt.title(" AIREBO bond dissociation energy")
+    
+    plt.show()        
+        
+
+
 
 
 def simple_plot():
@@ -16,8 +137,8 @@ def simple_plot():
 
 
     
-    trajectory_file = "30_variable_pull_test.lammpstrj"
-    path_and_file = "C:\\LAMMPS\\tensile_DNW\\30_nonH\\" + trajectory_file
+    trajectory_file = "AIREBO_C2H6_variable_pull_test.lammpstrj"
+    path_and_file = "C:\\LAMMPS\\topo\\C2H6\\AIREBO RUN\\" + trajectory_file
     
     with open(path_and_file) as f:
         igot = f.readlines()  
@@ -274,8 +395,6 @@ def multiple_plot():
 
 
 #################################################################compare trajectories in directory####################################
-    
-    
 def compare_plots():    
     import glob
     
@@ -397,8 +516,8 @@ def compare_plots():
         plt.show()
         plt.clf()
 
-
-simple_plot()
+plot_energy_vs_distance()
+#simple_plot()
 #single_plot_defined_steps()
 #multiple_plot()
 #compare_plots()
