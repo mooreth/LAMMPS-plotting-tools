@@ -515,9 +515,105 @@ def compare_plots():
  
         plt.show()
         plt.clf()
+def make_scatter_plot():
+    plot_all = "yes"
+    stopping_step = 1444
+    
+    atoms_to_plot = [19174]
+    steps_start = 0 
+    time_steps = []
+    x_cor = []
+    y_cor= []
+    z_cor = []
+    
+    
+    
+    trajectory_file = "12_0_revolute_joint.lammpstrj"
+    path_and_file = "C:\\LAMMPS\\rovelute joint plot compare\\" + trajectory_file
+    
+    with open(path_and_file) as f:
+        igot = f.readlines()  
+        
+        #lets get how many steps are in the file by seeing how many times the atoms groups are written out
+        
+        for count, line in enumerate(igot):
+            
+            if line.find("ITEM: TIMESTEP") > -1:
+                
+                #print(count) #this is a timestep line
+                new_step = (int(igot[count+1]))
+                time_steps.append(new_step)
+                
+              
+        #somewhere around here, if plot all = yes then stopping step equals last value in time_steps list else it stopping step
+        if plot_all == "yes":
+            last_data_point =  len(time_steps)
+        else:
+            last_data_point = stopping_step 
+        
+        print("there are this many data points in total", len(time_steps)) #this is how many data points we'll have for the atoms in atoms_to_plot
+        
+       
+        for atoms in range(len(atoms_to_plot)):
+            for lines in igot:
+                atom_data = lines.split()
+            #if line.find("ITEM: ATOMS id type xs ys zs") > -1:
+                #print("found set of coordinates for a time step")
+               
+                if atom_data[0] == str(atoms_to_plot[atoms]):
+                    #print(atom_data[0])
+                    x_cor2append = atom_data[2]
+                    x_cor.append(float(x_cor2append))
+                    
+                    y_cor2append = atom_data[3]
+                    y_cor.append(float(y_cor2append))       
+                    
+                    z_cor2append = atom_data[4]
+                    z_cor.append(float(z_cor2append))
+                    
+        x_var = statistics.variance(x_cor)
+        y_var = statistics.variance(y_cor)
+        z_var = statistics.variance(z_cor)
+        
+        print(round(x_var, 5) , round(y_var,5), round(z_var,5))
+        
+        xmax_value = max(x_cor)
+        xmin_value = min(x_cor)
+        ymax_value = max(y_cor)
+        ymin_value = min(y_cor) 
+        zmax_value = max(z_cor)
+        zmin_value = min(z_cor)      
+                    
+        # Create a figure and 3D axes
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        
+        # Create the scatter plot
+        ax.scatter(x_cor, y_cor, z_cor, c='r', marker='o')
+        ax.set_xticks([xmin_value, xmax_value ])
+        ax.set_yticks([ymin_value, ymax_value])
+        ax.set_zticks([zmin_value, zmax_value])
+        
+        # Set labels
+        ax.set_xlabel('X ')
+        ax.set_ylabel('Y ')
+        ax.set_zlabel('Z ')
+        
+    
+        
+        # Update the axis view and title
+        ax.view_init(60, 60, 0)
+        #plt.title('Elevation: %d°, Azimuth: %d°, Roll: %d°' % (elev, azim, roll))
+    
+        plt.draw()
+        plt.show()
+        plt.clf()
 
-plot_energy_vs_distance()
+
+
+#plot_energy_vs_distance()
 #simple_plot()
 #single_plot_defined_steps()
 #multiple_plot()
 #compare_plots()
+make_scatter_plot()
